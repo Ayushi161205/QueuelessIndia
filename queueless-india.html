@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QueueLess India</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #075e54;
+    --green-light: #128c7e;
+    --green-pale: #e8f5e9;
+    --wa: #25d366;
+    --bg: #f5f5f0;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.15);
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --text-faint: #a0a0a0;
+    --amber: #f59e0b;
+    --amber-pale: #fffbeb;
+    --red: #ef4444;
+    --red-pale: #fef2f2;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--green);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.02em;
+  }
+  .brand-icon {
+    width: 28px; height: 28px;
+    background: var(--wa);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.1);
+    padding: 4px;
+    border-radius: 10px;
+  }
+  .nav-tab {
+    padding: 6px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    color: rgba(255,255,255,0.7);
+    background: transparent;
+  }
+  .nav-tab.active {
+    background: #fff;
+    color: var(--green);
+  }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .num {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-card .lbl {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .stat-card.green .num { color: var(--green); }
+  .stat-card.amber .num { color: var(--amber); }
+
+  /* ── QUEUE LIST ── */
+  .queue-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .q-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: all 0.2s;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .q-item.is-active {
+    border-color: var(--green);
+    border-width: 1.5px;
+    background: #f0faf7;
+  }
+  .q-item.is-done {
+    opacity: 0.35;
+    transition: opacity 0.4s;
+  }
+  .token-bubble {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    flex-shrink: 0;
+  }
+  .token-bubble.active { background: var(--green); color: #fff; }
+  .token-bubble.waiting { background: #f0f0eb; color: var(--text-muted); }
+  .q-info { flex: 1; min-width: 0; }
+  .q-name { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; display: flex; align-items: center; gap: 6px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .pill-green { background: var(--green-pale); color: var(--green); }
+  .pill-amber { background: var(--amber-pale); color: #92400e; }
+  .pill-gray  { background: #f0f0eb; color: var(--text-muted); }
+
+  .q-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.12s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn:active { transform: scale(0.97); }
+  .btn-green { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn-green:hover { background: var(--green-light); }
+  .btn-red { border-color: #fca5a5; color: var(--red); }
+  .btn-red:hover { background: var(--red-pale); }
+  .btn-big {
+    width: 100%;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    justify-content: center;
+  }
+  .btn-wa { background: var(--wa); color: #fff; border-color: var(--wa); }
+  .btn-wa:hover { background: #1da851; }
+
+  /* ── ADD CUSTOMER ── */
+  .add-row {
+    display: flex; gap: 8px; margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  input, select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--green); background: #fff; }
+  input.full { width: 100%; }
+  select.full { width: 100%; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── PHONE MOCKUP ── */
+  .phone-shell {
+    background: #f0f0eb;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .phone {
+    width: 100%;
+    max-width: 260px;
+    border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 20px;
+    overflow: hidden;
+    background: #e5ddd5;
+  }
+  .phone-bar {
+    background: var(--green);
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .phone-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--wa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .phone-body {
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 340px;
+  }
+  .wa-msg {
+    max-width: 88%;
+    padding: 8px 11px;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #111;
+  }
+  .wa-msg.in  { background: #fff; align-self: flex-start; border-top-left-radius: 2px; }
+  .wa-msg.out { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 2px; }
+  .wa-time { font-size: 9px; color: #999; text-align: right; margin-top: 3px; }
+  .token-card-wa {
+    background: var(--green);
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 2px 0;
+  }
+  .token-card-wa .big { font-size: 26px; font-weight: 700; font-family: 'DM Mono', monospace; }
+
+  /* ── JOIN FORM ── */
+  .join-grid { display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-faint);
+  }
+  .empty svg { margin-bottom: 12px; opacity: 0.3; }
+
+  /* ── DASHBOARD HEADER ── */
+  .dash-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .dash-title { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  .live-dot {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 500;
+    color: var(--green);
+    background: var(--green-pale);
+    padding: 3px 10px 3px 7px;
+    border-radius: 20px;
+  }
+  .live-dot::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 10px; }
+  .divider { height: 1px; background: var(--border); margin: 8px 0 16px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">
+    <div class="brand-icon">📋</div>
+    QueueLess India
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-dash" onclick="switchTab('dash')">Business dashboard</button>
+    <button class="nav-tab" id="tab-cust" onclick="switchTab('cust')">Customer — join queue</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div id="toast">✓ <span id="toast-text"></span></div>
+
+<!-- ═══════════ DASHBOARD VIEW ═══════════ -->
+<div id="view-dash" class="container">
+
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">City Clinic</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Queue management dashboard</div>
+    </div>
+    <span class="live-dot">Live</span>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card green">
+      <div class="num" id="st-waiting">3</div>
+      <div class="lbl">Waiting now</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="st-served">8</div>
+      <div class="lbl">Served today</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="st-total">11</div>
+      <div class="lbl">Total joined</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="num" id="st-avgwait">—</div>
+      <div class="lbl">Avg wait (min)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Live queue</div>
+    <div class="queue-wrap" id="queue-list"></div>
+
+    <div class="add-row">
+      <input id="add-name" class="full" placeholder="Add walk-in customer name…" onkeydown="if(event.key==='Enter')addCustomer()" />
+      <select id="add-service" style="min-width:160px;">
+        <option>General checkup</option>
+        <option>Blood test</option>
+        <option>Follow-up</option>
+        <option>Consultation</option>
+        <option>Walk-in</option>
+      </select>
+      <button class="btn btn-green" onclick="addCustomer()">+ Add</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ CUSTOMER VIEW ═══════════ -->
+<div id="view-cust" class="container" style="display:none;">
+
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">Join the queue</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">City Clinic · Dr. Mehta's chamber</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="section-title">Your details</div>
+      <div class="join-grid">
+        <div class="field">
+          <label>Your name</label>
+          <input id="cust-name" class="full" placeholder="e.g. Ravi Kumar" />
+        </div>
+        <div class="field">
+          <label>Service needed</label>
+          <select id="cust-service" class="full">
+            <option>General checkup</option>
+            <option>Blood test</option>
+            <option>Follow-up</option>
+            <option>Specialist consultation</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>WhatsApp number</label>
+          <input id="cust-phone" class="full" placeholder="+91 98765 43210" />
+        </div>
+
+        <div style="background:var(--green-pale);border-radius:var(--radius-sm);padding:12px;font-size:12px;color:#1a5c3a;">
+          📱 You'll receive real-time updates on WhatsApp — no app download needed.
+        </div>
+
+        <button class="btn btn-wa btn-big" onclick="joinQueue()">
+          Join queue via WhatsApp
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title" style="margin-bottom:10px;">WhatsApp preview</div>
+      <div class="phone-shell">
+        <div class="phone">
+          <div class="phone-bar">
+            <div class="phone-avatar">Q</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;">QueueLess India</div>
+              <div style="font-size:10px;opacity:0.8;">Online</div>
+            </div>
+          </div>
+          <div class="phone-body" id="wa-chat">
+            <div class="wa-msg in">
+              👋 Welcome to <strong>City Clinic</strong>! Send your name to join the queue.
+              <div class="wa-time">Now</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--text-muted);line-height:1.6;">
+        <strong style="color:var(--text);display:block;margin-bottom:4px;">How it works</strong>
+        1. Fill your details and tap Join<br>
+        2. You get a digital token on WhatsApp<br>
+        3. We notify you 2 turns before yours<br>
+        4. Arrive only when it's almost your turn!
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const AVG = 7;
+  let served = 8;
+  let nextId = 4;
+
+  let queue = [
+    { id: 1, name: 'Ananya Sharma', service: 'General checkup', status: 'active' },
+    { id: 2, name: 'Ravi Kumar',    service: 'Blood test',       status: 'waiting' },
+    { id: 3, name: 'Meena Iyer',    service: 'Follow-up',        status: 'waiting' },
+  ];
+
+  function t() {
+    return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function toast(msg) {
+    document.getElementById('toast-text').textContent = msg;
+    const el = document.getElementById('toast');
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  function switchTab(tab) {
+    document.getElementById('view-dash').style.display = tab === 'dash' ? '' : 'none';
+    document.getElementById('view-cust').style.display = tab === 'cust' ? '' : 'none';
+    document.getElementById('tab-dash').className = 'nav-tab' + (tab === 'dash' ? ' active' : '');
+    document.getElementById('tab-cust').className = 'nav-tab' + (tab === 'cust' ? ' active' : '');
+  }
+
+  function waiting() { return queue.filter(q => q.status !== 'done'); }
+
+  function updateStats() {
+    const w = waiting();
+    document.getElementById('st-waiting').textContent = w.length;
+    document.getElementById('st-served').textContent = served;
+    document.getElementById('st-total').textContent = queue.length + served;
+    document.getElementById('st-avgwait').textContent = w.length ? Math.round(w.length * AVG / 2) : '—';
+  }
+
+  function render() {
+    updateStats();
+    const w = waiting();
+    const list = document.getElementById('queue-list');
+
+    if (!w.length) {
+      list.innerHTML = `<div class="empty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        Queue is empty — great work!
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = w.map((p, i) => {
+      const isActive = p.status === 'active';
+      const token = 'T' + String(p.id).padStart(2, '0');
+      const wait = Math.round((i + (isActive ? 0 : 1)) * AVG);
+      const badge = isActive
+        ? `<span class="pill pill-green">● Being served</span>`
+        : `<span class="pill pill-amber">~${wait} min wait</span>`;
+      return `
+        <div class="q-item ${isActive ? 'is-active' : ''}" id="qi-${p.id}">
+          <div class="token-bubble ${isActive ? 'active' : 'waiting'}">${token}</div>
+          <div class="q-info">
+            <div class="q-name">${p.name}</div>
+            <div class="q-sub">${p.service} &nbsp;${badge}</div>
+          </div>
+          <div class="q-actions">
+            ${isActive ? `<button class="btn btn-green" onclick="markDone(${p.id})">✓ Done</button>` : ''}
+            <button class="btn btn-red" onclick="remove(${p.id})" title="Remove">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function markDone(id) {
+    const idx = queue.findIndex(q => q.id === id);
+    if (idx < 0) return;
+    const item = document.getElementById('qi-' + id);
+    if (item) item.classList.add('is-done');
+    setTimeout(() => {
+      queue[idx].status = 'done';
+      served++;
+      const next = queue.find(q => q.status === 'waiting');
+      if (next) {
+        next.status = 'active';
+        toast('Calling ' + next.name + ' — WhatsApp notification sent! 📲');
+      } else {
+        toast('Queue is clear! Great work today. 🎉');
+      }
+      render();
+    }, 400);
+  }
+
+  function remove(id) {
+    queue = queue.filter(q => q.id !== id);
+    const hasActive = queue.some(q => q.status === 'active');
+    if (!hasActive) {
+      const next = queue.find(q => q.status === 'waiting');
+      if (next) next.status = 'active';
+    }
+    render();
+  }
+
+  function addCustomer() {
+    const name = document.getElementById('add-name').value.trim();
+    if (!name) { document.getElementById('add-name').focus(); return; }
+    const service = document.getElementById('add-service').value;
+    const hasActive = queue.some(q => q.status === 'active');
+    queue.push({ id: nextId++, name, service, status: hasActive ? 'waiting' : 'active' });
+    document.getElementById('add-name').value = '';
+    toast(name + ' added to queue!');
+    render();
+  }
+
+  function joinQueue() {
+    const name    = document.getElementById('cust-name').value.trim() || 'Customer';
+    const service = document.getElementById('cust-service').value;
+    const phone   = document.getElementById('cust-phone').value.trim() || '+91 XXXXX XXXXX';
+    const token   = 'T' + String(nextId).padStart(2, '0');
+    const pos     = waiting().length + 1;
+    const wait    = Math.round(pos * AVG);
+    const now     = t();
+
+    const chat = document.getElementById('wa-chat');
+    chat.innerHTML = `
+      <div class="wa-msg in">👋 Welcome to <strong>City Clinic</strong>! Send your name to join the queue.<div class="wa-time">${now}</div></div>
+      <div class="wa-msg out">${name} — ${service}<div class="wa-time">${now}</div></div>
+      <div class="wa-msg in">
+        <div class="token-card-wa">
+          <div style="font-size:10px;opacity:0.75;margin-bottom:2px;">Your token</div>
+          <div class="big">${token}</div>
+          <div style="font-size:10px;margin-top:6px;opacity:0.9;">City Clinic · ${service}</div>
+        </div>
+        <div style="margin-top:8px;">${pos === 1 ? 'You are next!' : pos + ' people ahead of you.'} Estimated wait: <strong>~${wait} min</strong></div>
+        <div style="font-size:10px;color:#555;margin-top:4px;">We'll notify you 2 turns before yours. Feel free to wait nearby! 🙏</div>
+        <div class="wa-time">${now}</div>
+      </div>`;
+
+    const hasActive = queue.some(q => q.status === 'active');
+    queue.push({ id: nextId++, name, service, status: hasActive ? 'waiting' : 'active' });
+    toast(name + ' joined as ' + token + ' 📱');
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>
